@@ -27,13 +27,15 @@ import com.mapbox.mapboxsdk.log.Logger;
 import com.mapbox.mapboxsdk.maps.Style;
 import com.mapbox.mapboxsdk.maps.TelemetryDefinition;
 import com.mapbox.mapboxsdk.storage.FileSource;
+import com.mapbox.mapboxsdk.style.layers.CannotAddLayerException;
 import com.mapbox.mapboxsdk.style.layers.Layer;
-import com.mapbox.mapboxsdk.style.layers.TransitionOptions;
 import com.mapbox.mapboxsdk.style.light.Light;
+import com.mapbox.mapboxsdk.style.sources.CannotAddSourceException;
 import com.mapbox.mapboxsdk.style.sources.Source;
 import com.mapbox.mapboxsdk.utils.FontUtils;
 import com.mapbox.mapboxsdk.utils.ThreadUtils;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -68,11 +70,7 @@ public class MapSnapshotter {
      */
     void onSnapshotReady(MapSnapshot snapshot);
 
-    void onDidFailLoadingStyle(String error);
-
     void onDidFinishLoadingStyle(MapSnapshotStyle style);
-
-    void onStyleImageMissing(String error);
   }
 
   public class MapSnapshotStyle {
@@ -84,47 +82,58 @@ public class MapSnapshotter {
     }
 
     public void addLayerBelow(@NonNull Layer layer, @NonNull String below) {
+      MapSnapshotter.this.addLayerBelow(layer, below);
     }
 
     public void addLayerAbove(@NonNull Layer layer, @NonNull String above) {
+      MapSnapshotter.this.addLayerAbove(layer, above);
     }
 
     public void addLayerAt(@NonNull Layer layer, @IntRange(from = 0) int index) {
+      MapSnapshotter.this.addLayerAt(layer, index);
     }
 
     @NonNull
     public List<Layer> getLayers() {
+      return MapSnapshotter.this.getLayers();
     }
 
     public Layer getLayer(String layerId) {
+      return MapSnapshotter.this.getLayer(layerId);
     }
 
     public boolean removeLayer(@NonNull String layerId) {
+      return MapSnapshotter.this.removeLayer(layerId);
     }
 
     public boolean removeLayer(@NonNull Layer layer) {
+      return MapSnapshotter.this.removeLayer(layer);
     }
 
     public boolean removeLayerAt(@IntRange(from = 0) int index) {
+      return MapSnapshotter.this.removeLayerAt(index);
     }
 
     public void addSource(@NonNull Source source) {
+      MapSnapshotter.this.addSource(source);
     }
 
     @NonNull
     public List<Source> getSources() {
+      return MapSnapshotter.this.getSources();
     }
 
+    @Nullable
     public Source getSource(@NonNull String sourceId) {
+      return MapSnapshotter.this.getSource(sourceId);
     }
 
     public boolean removeSource(@NonNull String sourceId) {
+      return MapSnapshotter.this.removeSource(sourceId);
     }
 
     public boolean removeSource(@NonNull Source source) {
-    }
-
-    public void setTransitionOptions(@NonNull TransitionOptions transitionOptions) {
+      return MapSnapshotter.this.removeSource(source);
     }
 
     public void addImage(@NonNull String name, @NonNull Bitmap image) {
@@ -132,10 +141,11 @@ public class MapSnapshotter {
     }
 
     public void addImage(@NonNull String name, @NonNull Drawable drawable) {
-
+      MapSnapshotter.this.addImage(name, drawable);
     }
 
     public void addImage(@NonNull final String name, @NonNull Bitmap bitmap, boolean sdf) {
+      MapSnapshotter.this.addImage(name, bitmap, sdf);
     }
 
     public void addImages(@NonNull HashMap<String, Bitmap> images) {
@@ -143,18 +153,164 @@ public class MapSnapshotter {
     }
 
     public void addImages(@NonNull HashMap<String, Bitmap> images, boolean sdf) {
-
+      MapSnapshotter.this.addImages(images, sdf);
     }
 
     public Bitmap getImage(String name) {
+      return MapSnapshotter.this.getImage(name);
     }
 
     public void removeImage(String name) {
+      MapSnapshotter.this.removeImage(name);
     }
 
     public Light getLight() {
+      return MapSnapshotter.this.getLight();
     }
   }
+
+  private Light getLight() {
+    return nativeGetLight();
+  }
+
+  private void removeImage(String name) {
+    nativeRemoveImage(name);
+  }
+
+  private Bitmap getImage(String name) {
+    return nativeGetImage(name);
+  }
+
+  private void addImages(HashMap<String, Bitmap> images, boolean sdf) {
+    //todo need ImageWrapper
+  }
+
+  private void addImage(String name, Bitmap bitmap, boolean sdf) {
+    //todo need ImageWrapper
+  }
+
+  private void addImage(String name, Drawable drawable) {
+    //todo need ImageWrapper
+  }
+
+  private boolean removeSource(Source source) {
+    return nativeRemoveSource(source, source.getNativePtr());
+  }
+
+  private boolean removeSource(String sourceId) {
+    Source source = getSource(sourceId);
+    if (source != null) {
+      return removeSource(source);
+    }
+    return false;
+  }
+
+  @Nullable
+  private Source getSource(String sourceId) {
+    return nativeGetSource(sourceId);
+  }
+
+  private List<Source> getSources() {
+    return Arrays.asList(nativeGetSources());
+  }
+
+  private void addSource(Source source) {
+    nativeAddSource(source, source.getNativePtr());
+  }
+
+  private boolean removeLayerAt(int index) {
+    return nativeRemoveLayerAt(index);
+  }
+
+  private boolean removeLayer(String layerId) {
+    Layer layer = getLayer(layerId);
+    if (layer != null) {
+      return removeLayer(layer);
+    }
+    return false;
+  }
+
+  private boolean removeLayer(Layer layer) {
+    return nativeRemoveLayer(layer.getNativePtr());
+  }
+
+  private Layer getLayer(String layerId) {
+    return nativeGetLayer(layerId);
+  }
+
+  private List<Layer> getLayers() {
+    return Arrays.asList(nativeGetLayers());
+  }
+
+  private void addLayerAt(Layer layer, int index) {
+    nativeAddLayerAt(layer.getNativePtr(), index);
+  }
+
+  private void addLayerAbove(Layer layer, String above) {
+    nativeAddLayerAbove(layer.getNativePtr(), above);
+  }
+
+  private void addLayerBelow(Layer layer, String below) {
+    nativeAddLayer(layer.getNativePtr(), below);
+  }
+
+  private void addLayer(Layer layer) {
+    nativeAddLayer(layer.getNativePtr(), null);
+  }
+
+  @NonNull
+  @Keep
+  private native Layer[] nativeGetLayers();
+
+  @NonNull
+  @Keep
+  private native Layer nativeGetLayer(String layerId);
+
+  @Keep
+  private native void nativeAddLayer(long layerPtr, String before) throws CannotAddLayerException;
+
+  @Keep
+  private native void nativeAddLayerAbove(long layerPtr, String above) throws CannotAddLayerException;
+
+  @Keep
+  private native void nativeAddLayerAt(long layerPtr, int index) throws CannotAddLayerException;
+
+  @Keep
+  private native boolean nativeRemoveLayer(long layerId);
+
+  @Keep
+  private native boolean nativeRemoveLayerAt(int index);
+
+  @NonNull
+  @Keep
+  private native Source[] nativeGetSources();
+
+  @NonNull
+  @Keep
+  private native Source nativeGetSource(String sourceId);
+
+  @Keep
+  private native void nativeAddSource(Source source, long sourcePtr) throws CannotAddSourceException;
+
+  @Keep
+  private native boolean nativeRemoveSource(Source source, long sourcePtr);
+
+//  @Keep
+//  private native void nativeAddImage(String name, Bitmap bitmap, float pixelRatio, boolean sdf);
+//
+//  @Keep
+//  private native void nativeAddImages(Image[] images);
+
+  @Keep
+  private native void nativeRemoveImage(String name);
+
+  @NonNull
+  @Keep
+  private native Bitmap nativeGetImage(String name);
+
+  @NonNull
+  @Keep
+  private native Light nativeGetLight();
 
   /**
    * Can be used to get notified of errors
@@ -511,23 +667,6 @@ public class MapSnapshotter {
   public native void setStyleJson(String styleJson);
 
   /**
-   * Add a new layer to snapshotter before snapshotter starts.
-   *
-   * @param layer the layer to add.
-   */
-  private void addLayer(Layer layer) {
-    nativeAddLayer(layer.getNativePtr());
-  }
-
-  private boolean removeLayer(@NonNull Layer layer) {
-
-  }
-
-  private void addImage() {
-
-  }
-
-  /**
    * Must be called in on the thread
    * the object was created on.
    */
@@ -708,6 +847,16 @@ public class MapSnapshotter {
         }
       }
     });
+  }
+
+  /**
+   * Called by JNI peer when snapshot style is ready.
+   */
+  @Keep
+  protected void onDidFinishLoadingStyle() {
+    if (callback != null) {
+      callback.onDidFinishLoadingStyle(new MapSnapshotStyle());
+    }
   }
 
   /**
